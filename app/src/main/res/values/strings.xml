@@ -13,6 +13,9 @@
     <string name="menu_stop">Stop</string>
     <string name="error_bluetooth_not_enabled">Bluetooth not enabled</string>
     <string name="menu_refresh">Refresh</string>
+    <string name="name_bluetooth_intent">BluetoothDevice</string>
+    <string name="title_unknown_device">Unknown Device</string>
+    <string name="title_device_state">Current state</string>
 
 
 </resources>

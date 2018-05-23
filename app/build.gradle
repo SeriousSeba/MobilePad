@@ -1,6 +1,29 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.protobuf'
 
 android {
+
+    protobuf {
+        protoc {
+            artifact = 'com.google.protobuf:protoc:3.0.0'
+        }
+        plugins {
+            javalite {
+                artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+            }
+        }
+        generateProtoTasks {
+            all().each { task ->
+                task.builtins {
+                    remove java
+                }
+                task.plugins {
+                    javalite { }
+                }
+            }
+        }
+    }
+
     compileSdkVersion 27
     buildToolsVersion "27.0.1"
     defaultConfig {
@@ -20,10 +43,14 @@ android {
 }
 
 dependencies {
+
+
     compile fileTree(dir: 'libs', include: ['*.jar'])
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile 'com.android.support.constraint:constraint-layout:1.0.0-beta4'
+
+
     testCompile 'junit:junit:4.12'
 }
