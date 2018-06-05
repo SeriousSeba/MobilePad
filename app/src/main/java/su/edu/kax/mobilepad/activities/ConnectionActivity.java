@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +16,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.LinkedList;
@@ -56,7 +57,7 @@ public class ConnectionActivity extends ListActivity {
 
         mDeviceListAdapter = new DeviceListAdapter(this); //Nowy adapter
         setListAdapter(mDeviceListAdapter);  //Uaktualnienie adapter
-        scanDevice(true);  //Zacznij skanowac
+//        scanDevice(true);  //Zacznij skanowac
     }
 
     /**
@@ -134,7 +135,7 @@ public class ConnectionActivity extends ListActivity {
         if (!mScanning) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
-            menu.findItem(R.id.menu_refresh).setActionView(null);
+//            menu.findItem(R.id.menu_refresh).setActionView(null);
         } else {
             menu.findItem(R.id.menu_stop).setVisible(true);
             menu.findItem(R.id.menu_scan).setVisible(false);
@@ -181,9 +182,9 @@ public class ConnectionActivity extends ListActivity {
         if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode != Activity.RESULT_CANCELED) {
             scanDevice(true); //Jesli wlaczono bluetooth
             return;
-        }
-        else {
+        } else if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED) {
             Toast.makeText(this, R.string.error_bluetooth_not_enabled, Toast.LENGTH_LONG).show();
+            finish();
             return;
         }
 
@@ -213,6 +214,19 @@ public class ConnectionActivity extends ListActivity {
         }
     }
 
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        if (mDeviceListAdapter != null) {
+            BluetoothDevice bluetoothDevice;
+            bluetoothDevice = mDeviceListAdapter.getDevice(position);
+            Intent intent = new Intent(this, ControllActivity.class);
+            intent.putExtra(String.valueOf(R.string.name_bluetooth_intent), bluetoothDevice);
+            startActivity(intent);
+        }
+
+    }
+
+
     /**
      * Funkcja do skanowania urzadzen
      * @param enable
@@ -224,7 +238,8 @@ public class ConnectionActivity extends ListActivity {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }
-
+            for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices())
+                mDeviceListAdapter.addDevice(device);
             mHandler.postDelayed(new Runnable() {// Ustaw taska ktory zakonczy skanowanie po okreslonym czasie
                 @Override                       //Skanowanie to ardzo kosztowna operacja
                 public void run() {
