@@ -1,4 +1,4 @@
-package su.edu.kax.mobilepad;
+package su.edu.kax.mobilepad.adapters;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+import su.edu.kax.mobilepad.R;
 
 import java.util.ArrayList;
 

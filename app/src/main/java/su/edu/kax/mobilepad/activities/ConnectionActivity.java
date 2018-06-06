@@ -1,4 +1,4 @@
-package su.edu.kax.mobilepad;
+package su.edu.kax.mobilepad.activities;
 
 import android.Manifest;
 import android.app.Activity;
@@ -19,6 +19,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
+import su.edu.kax.mobilepad.adapters.DeviceListAdapter;
+import su.edu.kax.mobilepad.R;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -240,6 +242,7 @@ public class ConnectionActivity extends ListActivity {
             }
             for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices())
                 mDeviceListAdapter.addDevice(device);
+            invalidateOptionsMenu();
             mHandler.postDelayed(new Runnable() {// Ustaw taska ktory zakonczy skanowanie po okreslonym czasie
                 @Override                       //Skanowanie to ardzo kosztowna operacja
                 public void run() {

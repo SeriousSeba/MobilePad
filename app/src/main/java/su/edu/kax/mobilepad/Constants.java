@@ -16,9 +16,7 @@
 
 package su.edu.kax.mobilepad;
 
-/**
- * Defines several constants used between {@link BluetoothChatService} and the UI.
- */
+
 public interface Constants {
 
     // Message types sent from the BluetoothChatService Handler
@@ -27,6 +25,10 @@ public interface Constants {
     int MESSAGE_WRITE = 3;
     int MESSAGE_DEVICE_NAME = 4;
     int MESSAGE_TOAST = 5;
+
+
+    int COMMAND_MOUSE_MOVE=10;
+    int COMMAND_COMMAND=11;
 
     // Key names received from the BluetoothChatService Handler
     String DEVICE_NAME = "device_name";

@@ -1,4 +1,4 @@
-package su.edu.kax.mobilepad;
+package su.edu.kax.mobilepad.services;
 
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
@@ -6,6 +6,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
+import su.edu.kax.mobilepad.Constants;
+import su.edu.kax.mobilepad.fragments.CommandControllFragment;
+import su.edu.kax.mobilepad.fragments.MouseControllFragment;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,97 +17,82 @@ import java.io.OutputStream;
 import java.util.UUID;
 
 public class BluetoothPadService {
-    // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
+
+    public static final int STATE_NONE=0;
+    public static final int STATE_LISTEN=1;
+    public static final int STATE_CONNECTING=2;
+    public static final int STATE_CONNECTED=3;
+
+
     private static final String TAG = "BluetoothPadService";
     private static final UUID MY_UUID_SECURE =
             UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
-    private static final UUID MY_UUID_INSECURE =
-            UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
+
+
     private Handler mHandler = null;
-    private BluetoothPadService.ConnectedThread mConnectedThread;
+    private ConnectedThread mConnectedThread;
     private int mState;
+    private Context context;
+    private BluetoothSocket bluetoothSocket;
 
 
-    public BluetoothPadService(Context context, Handler handler, BluetoothSocket bluetoothSocket) {
+    public BluetoothPadService(Context context, Handler handler) {
         mHandler = handler;
+        this.context=context;
+        MouseControllFragment.handler=commandHandler;
+        CommandControllFragment.handler=commandHandler;
     }
-
 
     public synchronized int getState() {
         return mState;
     }
 
 
-    /**
-     * Start the chat service. Specifically start AcceptThread to begin a
-     * session in listening (server) mode. Called by the Activity onResume()
-     */
+
     public synchronized void start() {
-        Log.d(TAG, "start");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "start");
 
-        // Cancel any thread currently running a connection
-        if (mConnectedThread != null) {
-            mConnectedThread.cancel();
-            mConnectedThread = null;
-        }
+                if (mConnectedThread != null) {
+                    mConnectedThread.cancel();
+                    mConnectedThread = null;
+                }
 
-        //mConnectedThread=
+                mConnectedThread=new ConnectedThread(bluetoothSocket);
+                mConnectedThread.start();
+                updateUserInterfaceTitle();
+            }
+        }).start();
 
-        // Start the thread to listen on a BluetoothServerSocket
-
-
-        //updateUserInterfaceTitle();
     }
 
+    public synchronized void stop(){
+        if(mConnectedThread!=null){
+            mConnectedThread.cancel();
+            mState=STATE_NONE;
+        }
+        updateUserInterfaceTitle();
+    }
 
-//    public synchronized void stop() {
-//        Log.d(TAG, "stop");
-//
-//        if (mConnectThread != null) {
-//            mConnectThread.cancel();
-//            mConnectThread = null;
-//        }
-//
-//        if (mConnectedThread != null) {
-//            mConnectedThread.cancel();
-//            mConnectedThread = null;
-//        }
-//
-//        if (mSecureAcceptThread != null) {
-//            mSecureAcceptThread.cancel();
-//            mSecureAcceptThread = null;
-//        }
-//
-//        if (mInsecureAcceptThread != null) {
-//            mInsecureAcceptThread.cancel();
-//            mInsecureAcceptThread = null;
-//        }
-//        mState = STATE_NONE;
-//
-//        updateUserInterfaceTitle();
-//    }
+    public void setBluetoothSocket(BluetoothSocket bluetoothSocket) {
+        this.bluetoothSocket = bluetoothSocket;
+    }
 
-
-    /**
-     * Indicate that the connection was lost and notify the UI Activity.
-     */
     private void connectionLost() {
-        // Send a failure message back to the Activity
         Message msg = mHandler.obtainMessage(Constants.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
         bundle.putString(Constants.TOAST, "Device connection was lost");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
-
+        mConnectedThread.cancel();
         mState = STATE_NONE;
-        // updateUserInterfaceTitle();
+        updateUserInterfaceTitle();
+    }
 
-        // Start the service over to restart listening mode
-        BluetoothPadService.this.start();
+    private void updateUserInterfaceTitle() {
+        mHandler.obtainMessage(Constants.MESSAGE_STATE_CHANGE,mState).sendToTarget();
     }
 
 
@@ -112,13 +101,12 @@ public class BluetoothPadService {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
 
-        public ConnectedThread(BluetoothSocket socket, String socketType) {
-            Log.d(TAG, "create ConnectedThread: " + socketType);
+        public ConnectedThread(BluetoothSocket socket) {
+            Log.d(TAG, "create ConnectedThread: ");
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
-            // Get the BluetoothSocket input and output streams
             try {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
@@ -136,39 +124,35 @@ public class BluetoothPadService {
             byte[] buffer = new byte[1024];
             int bytes;
 
-            // Keep listening to the InputStream while connected
+
             while (mState == STATE_CONNECTED) {
                 try {
-                    // Read from the InputStream
                     bytes = mmInStream.read(buffer);
-
-                    // Send the obtained bytes to the UI Activity
                     mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget();
                 } catch (IOException e) {
                     Log.e(TAG, "disconnected", e);
-                    connectionLost();
+                    break;
+                }catch (NullPointerException e){
+                    Log.e(TAG,"Nie udalo sie tworzenie kanalu");
                     break;
                 }
             }
+            connectionLost();
+            Log.d(TAG,"Koncze polaczenia");
         }
 
-        /**
-         * Write to the connected OutStream.
-         *
-         * @param buffer The bytes to write
-         */
+
         public void write(byte[] buffer) {
             try {
                 mmOutStream.write(buffer);
-
-                // Share the sent message back to the UI Activity
                 mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer)
                         .sendToTarget();
             } catch (IOException e) {
                 Log.e(TAG, "Exception during write", e);
             }
         }
+
 
         public void cancel() {
             try {
@@ -178,6 +162,31 @@ public class BluetoothPadService {
             }
         }
     }
+
+
+    public Handler getCommandHandler() {
+        return commandHandler;
+    }
+
+    private Handler commandHandler=new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case Constants.COMMAND_COMMAND:
+                    Toast.makeText(context,"Komenda",Toast.LENGTH_LONG).show();
+//                    switch (msg.arg1) {
+//
+//                    }
+                    break;
+                case Constants.COMMAND_MOUSE_MOVE:
+                    Toast.makeText(context,"Ruch myszka",Toast.LENGTH_LONG).show();
+//                    switch (msg.arg1) {
+//
+//                    }
+                    break;
+            }
+        }
+    };
 
 
 }

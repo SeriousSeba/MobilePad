@@ -1,6 +1,9 @@
-package su.edu.kax.mobilepad;
+package su.edu.kax.mobilepad.activities;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -8,24 +11,25 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.ParcelUuid;
+import android.os.*;
+import android.support.constraint.ConstraintLayout;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
+import android.view.*;
+import android.widget.Button;
 import android.widget.Toast;
+import su.edu.kax.mobilepad.Constants;
+import su.edu.kax.mobilepad.R;
+import su.edu.kax.mobilepad.fragments.CommandControllFragment;
+import su.edu.kax.mobilepad.fragments.MouseControllFragment;
 import su.edu.kax.mobilepad.services.BluetoothPadService;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.UUID;
 
-public class ControllActivity extends Activity implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
+public class ControllActivity extends Activity /**/ {
 
     public final static UUID UUID_RX =
             UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
@@ -33,11 +37,10 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
     private static final int REQUEST_ENABLE_BT = 3;
-    private static final String DEBUG_TAG = "Gestures";
+
     private final String ERROR_DEVICE_NOT_FOUND = "Device not found problem";
-    /**
-     * The Handler that gets information back from the BluetoothChatService
-     */
+
+
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -58,8 +61,11 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
                     }
                     break;
             }
+            invalidateOptionsMenu();
         }
     };
+
+
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();//Jesli znaleziono nowe urzadzenie
@@ -69,55 +75,79 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
                 int bondState = device.getBondState();
                 if (bondState == BluetoothDevice.BOND_BONDED) {
                     Toast.makeText(context, "Powiązano", Toast.LENGTH_SHORT).show();
-                    invalidateOptionsMenu();
                 } else if (bondState == BluetoothDevice.BOND_BONDING) {
                     Toast.makeText(context, "Wiąże", Toast.LENGTH_SHORT).show();
-                    invalidateOptionsMenu();
                 } else {
                     Toast.makeText(context, "Nie powiazano", Toast.LENGTH_SHORT).show();
-                    invalidateOptionsMenu();
-
                 }
-
+                invalidateOptionsMenu();
             }
 
         }
     };
-    BluetoothSocket bluetoothSocket = null;
-    BluetoothListeningThread bluetoothListeningThread;
-    private GestureDetector mDetector;
-    private Toast toast = null;
+
+
+    private BluetoothSocket bluetoothSocket=null;
     private BluetoothDevice mainDevice;
     private BluetoothPadService padService = null;
     private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+
+
+
+    private int position=0;
+    HashMap<Integer,Fragment> fragmentMap=new HashMap<>();
+    FragmentManager fragmentManager = getFragmentManager();
+    FragmentTransaction fragmentTransaction;
+
+
+    private Button button;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controll);
-        mDetector = new GestureDetector(this, this);
-        mDetector.setOnDoubleTapListener(this);
+        button=(Button) findViewById(R.id.button);
+        button.setOnTouchListener(new OnSwipeTouchListener(this){
+            public void onSwipeRight() {
+                handleSwipe(false);
+            }
+            public void onSwipeLeft() {
+                handleSwipe(true);
+            }
+            public void onSwipeBottom() {}
+            public void onSwipeTop() {}
+        });
+
+
+        Intent intent = getIntent();
+        mainDevice = intent.getParcelableExtra(String.valueOf(R.string.name_bluetooth_intent));
+
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mReceiver, filter);
 
     }
 
+
     @Override
     public void onStart() {
         super.onStart();
-        toast = Toast.makeText(this, "elo", Toast.LENGTH_SHORT);
-
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        } else if (padService == null) {
-            setupPad();
         }
-
-
-        Intent intent = getIntent();
-        mainDevice = intent.getParcelableExtra(String.valueOf(R.string.name_bluetooth_intent));
+        padService = new BluetoothPadService(getApplicationContext(), mHandler);
+        initializeFragments();
+        updateFragment();
+        setupPad();
     }
+
+    @Override
+    public void onStop(){
+        super.onStop();
+        padService.stop();
+    }
+
 
     private void createConnectionToDevice() throws IOException {
         int bondedState = mainDevice.getBondState();
@@ -138,14 +168,12 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
                     bluetoothSocket = mainDevice.createInsecureRfcommSocketToServiceRecord(mainDevice.getUuids()[0].getUuid());
                     for (ParcelUuid uuid : mainDevice.getUuids())
                         System.out.println(uuid);
-                    bluetoothListeningThread = new BluetoothListeningThread(bluetoothSocket);
-                    bluetoothListeningThread.start();
+                   setupPad();
                 }
 
             } else {
                 bluetoothSocket = mainDevice.createInsecureRfcommSocketToServiceRecord(mainDevice.getUuids()[0].getUuid());
-                bluetoothListeningThread = new BluetoothListeningThread(bluetoothSocket);
-                bluetoothListeningThread.start();
+                setupPad();
             }
         }
 
@@ -155,7 +183,7 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
     public void onDestroy() {
         super.onDestroy();
         if (padService != null) {
-            // padService.stop();
+             padService.stop();
         }
         unregisterReceiver(mReceiver);
     }
@@ -163,10 +191,12 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
     @Override
     public void onResume() {
         super.onResume();
-        if (padService != null) {
+        if (padService != null && bluetoothSocket!=null && bluetoothSocket.isConnected()) {
             if (padService.getState() == BluetoothPadService.STATE_NONE) {
                 padService.start();
             }
+        }else {
+            setupPad();
         }
     }
 
@@ -176,14 +206,14 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
         if (mainDevice != null) {
             int bondedState = mainDevice.getBondState();
             if (bondedState == BluetoothDevice.BOND_BONDED) {
-//                if(bluetoothSocket!=null) {
-//                    if (bluetoothSocket.isConnected()) {
+                if(bluetoothSocket!=null) {
+                    if (bluetoothSocket.isConnected()) {
                 menu.findItem(R.id.menu_connection_name).setTitle(mainDevice.getName());
                 menu.findItem(R.id.menu_connection_state).setActionView(null);
                 menu.findItem(R.id.menu_connection_state).setIcon(R.drawable.ic_bluetooth_enabled);
                 return true;
-//                    }
-//                }
+                    }
+                }
             } else if (bondedState == BluetoothDevice.BOND_BONDING) {
                 menu.findItem(R.id.menu_connection_name).setTitle(mainDevice.getName());
                 menu.findItem(R.id.menu_connection_state).setActionView(R.layout.actionbar_scanning_progress);
@@ -201,7 +231,7 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.menu_connection_state: //Skan, resetuj adapter i skanuj
+            case R.id.menu_connection_state:
                 try {
                     createConnectionToDevice();
                 } catch (IOException e) {
@@ -215,106 +245,30 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
 
     private void setupPad() {
         Log.d(TAG, "setupPad()");
-
-
-        //padService = new BluetoothPadService(this, mHandler);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (this.mDetector.onTouchEvent(event)) {
-            return true;
+        if(bluetoothSocket==null){
+            Toast.makeText(getApplicationContext(),"Nie mozna utworzyc polaczenia z urzadzeniem",Toast.LENGTH_LONG).show();
+            Log.e(TAG,"Nie mozna utworzyc polaczenia");
         }
-        return super.onTouchEvent(event);
-    }
-
-    @Override
-    public boolean onDown(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onDown: " + event.toString());
-        return true;
-    }
-
-    @Override
-    public boolean onFling(MotionEvent event1, MotionEvent event2,
-                           float velocityX, float velocityY) {
-        Log.d(DEBUG_TAG, "onFling: " + event1.toString() + event2.toString());
-
-        if (velocityX > 30 || velocityY > 30) {
-            String elo = "nie wiadomo gdzie";
-            if (Math.abs(velocityX) > Math.abs(velocityY))
-                elo = "w poziomie";
-            else
-                elo = "w pionie";
-            toast.cancel();
-            toast = Toast.makeText(getApplicationContext(), "Machniecie " + elo, Toast.LENGTH_SHORT);
-            toast.show();
-            return false;
+        else {
+            new Thread() {
+                public void run() {
+            try
+                {
+                    bluetoothSocket.connect();
+                } catch(
+                IOException e)
+                {
+                    e.printStackTrace();
+                    return;
+                }
+            Log.d(TAG,"Tworze polaczenie");
+                padService.setBluetoothSocket(bluetoothSocket);
+            padService.start();
+            }
+        }.start();
         }
-        return true;
     }
 
-    @Override
-    public void onLongPress(MotionEvent event) {
-        toast.cancel();
-        toast = Toast.makeText(getApplicationContext(), "Dlugie przytrzymanie", Toast.LENGTH_SHORT);
-        toast.show();
-    }
-
-    @Override
-    public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
-                            float distanceY) {
-        Log.d(DEBUG_TAG, "onScroll: " + event1.toString() + event2.toString());
-//        if(distanceX>10 || distanceY>10)
-//        {
-//       String elo="nie wiadomo gdzie";
-//       if(distanceX>distanceY)
-//           elo="w poziomie";
-//       else
-//           elo="w pionie";
-//       toast.cancel();
-//        toast=Toast.makeText(getApplicationContext(),"Scrollowanie "+elo,Toast.LENGTH_SHORT);
-//        toast.show();
-//        return true;}
-
-        return true;
-
-    }
-
-    @Override
-    public void onShowPress(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
-    }
-
-    @Override
-    public boolean onSingleTapUp(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
-        return true;
-    }
-
-    @Override
-    public boolean onDoubleTap(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
-        toast.cancel();
-        toast = Toast.makeText(getApplicationContext(), "Podwojne klikniecie", Toast.LENGTH_SHORT);
-        toast.show();
-        return true;
-    }
-
-    @Override
-    public boolean onDoubleTapEvent(MotionEvent event) {
-        toast.cancel();
-        toast = Toast.makeText(getApplicationContext(), "Podwojne klikniecie", Toast.LENGTH_SHORT);
-        toast.show();
-        return true;
-    }
-
-    @Override
-    public boolean onSingleTapConfirmed(MotionEvent event) {
-        toast.cancel();
-        toast = Toast.makeText(getApplicationContext(), "Pojedyncze klikniecie", Toast.LENGTH_SHORT);
-        toast.show();
-        return true;
-    }
 
 
     private void handleIntent() {
@@ -338,31 +292,141 @@ public class ControllActivity extends Activity implements GestureDetector.OnGest
         }
     }
 
-    public class BluetoothListeningThread extends Thread {
+//    public class BluetoothListeningThread extends Thread {
+//
+//        BluetoothSocket bluetoothSocket;
+//
+//
+//        BluetoothListeningThread(BluetoothSocket bluetoothSocket) {
+//            this.bluetoothSocket = bluetoothSocket;
+//
+//        }
+//
+//        @Override
+//        public void run() {
+//            try {
+//                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(bluetoothSocket.getInputStream()));
+//                String buffer;
+//                while (bluetoothSocket.isConnected() && (buffer = bufferedReader.readLine()) != null) {
+//                    Log.i(TAG, buffer);
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//
+//        }
+//
+//    }
 
-        BluetoothSocket bluetoothSocket;
+
+    private void handleSwipe(boolean direction){
+        if(direction){
+            if(position==0)
+                return;
+            position--;
+
+        }
+        else {
+            if(position==2)
+                return;
+            position++;
+        }
+        updateFragment();
+    }
+
+    private void updateFragment(){
+        fragmentTransaction=fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragmentLayout,fragmentMap.get(position));
+        fragmentTransaction.commit();
+    }
 
 
-        BluetoothListeningThread(BluetoothSocket bluetoothSocket) {
-            this.bluetoothSocket = bluetoothSocket;
+    private void initializeFragments(){
+        MouseControllFragment mouseControllFragment=new MouseControllFragment();
+        CommandControllFragment commandControllFragment=new CommandControllFragment();
+        Handler handler=padService.getCommandHandler();
+//        mouseControllFragment.setHandler(handler);
+//        commandControllFragment.setHandler(handler);
+        fragmentMap.put(0,new MouseControllFragment());
+        fragmentMap.put(1,new CommandControllFragment());
+    }
 
+
+
+    class OnSwipeTouchListener implements View.OnTouchListener {
+
+        private final GestureDetector gestureDetector;
+
+        public OnSwipeTouchListener (Context ctx){
+            gestureDetector = new GestureDetector(ctx, new GestureListener());
         }
 
         @Override
-        public void run() {
-            try {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(bluetoothSocket.getInputStream()));
-                String buffer;
-                while (bluetoothSocket.isConnected() && (buffer = bufferedReader.readLine()) != null) {
-                    Log.i(TAG, buffer);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        public boolean onTouch(View v, MotionEvent event) {
+            return gestureDetector.onTouchEvent(event);
+        }
+
+        private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+            private static final int SWIPE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
             }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                boolean result = false;
+                try {
+                    float diffY = e2.getY() - e1.getY();
+                    float diffX = e2.getX() - e1.getX();
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight();
+                            } else {
+                                onSwipeLeft();
+                            }
+                            result = true;
+                        }
+                    }
+                    else if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffY > 0) {
+                            onSwipeBottom();
+                        } else {
+                            onSwipeTop();
+                        }
+                        result = true;
+                    }
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                return result;
+            }
+        }
+
+        public void onSwipeRight() {
 
         }
 
+        public void onSwipeLeft() {
+        }
+
+        public void onSwipeTop() {
+        }
+
+        public void onSwipeBottom() {
+        }
     }
+
+
+
+
+
+
+
 
 }
 
