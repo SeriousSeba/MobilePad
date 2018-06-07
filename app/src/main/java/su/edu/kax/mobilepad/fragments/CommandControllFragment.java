@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +41,8 @@ public class CommandControllFragment extends Fragment {
                 if(!isChecked){
                     sequence.clear();
                     checked=false;
+                    messageAdapter.notifyDataSetInvalidated();
+
                 }else{
                     checked=true;
                 }
@@ -57,6 +60,7 @@ public class CommandControllFragment extends Fragment {
                     Message message = handler.obtainMessage();
                     message.obj = keyCombinationEvent;
                     message.sendToTarget();
+                    messageAdapter.notifyDataSetInvalidated();
                 }
             }
         });
@@ -69,16 +73,16 @@ public class CommandControllFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(checked){
                     Integer result=new Integer(position);
-                    TextView view1;
+                    TextView view1=(TextView)view;;
                     if(!sequence.contains(result)) {
                         sequence.add(result);
-                        view1=(TextView)view;
-                        view1.setTextColor(R.color.colorAccent);
+                        view1.setBackgroundColor(R.color.colorWhite);
                         parent.invalidate();
 
                     }else {
                         sequence.remove(result);
-                        //textView.setTextColor(2131034112);
+                        view1.setBackgroundColor(0);
+                        parent.invalidate();
                     }
                 }else {
                     KeyEvent keyEvent=new KeyEvent(position);
@@ -119,7 +123,7 @@ public class CommandControllFragment extends Fragment {
 
         public Object getItem(int position) {
 
-            return position;
+            return position+3;
         }
 
         public long getItemId(int position) {
@@ -137,15 +141,20 @@ public class CommandControllFragment extends Fragment {
             } else {
                 textView = (TextView) convertView;
             }
-
+            if(!checked)
+                textView.setBackgroundColor(0);
+            textView.setTextSize(10);
             textView.setText(mThumbIds[position]);
             return textView;
         }
 
 
         private String[] mThumbIds = {
-                "Alt","Tab",
-                "Space","Enter"
+                "Cancel","Clear","Shift","Ctrl","Alt","Pause","Caps","Esc","Space",
+                "PG_U","PG_D","End","Home","Left","Up","Right","Down"
         };
     }
+
+
+
 }

@@ -49,14 +49,14 @@ public class ControllActivity extends Activity /**/ {
                 case Constants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
                         case BluetoothPadService.STATE_CONNECTED:
-                            Toast.makeText(context, "Utworzono połączenie", Toast.LENGTH_LONG).show();
+                            //Toast.makeText(context, "Utworzono połączenie", Toast.LENGTH_LONG).show();
                             break;
                         case BluetoothPadService.STATE_CONNECTING:
-                            Toast.makeText(context, "Laczenie", Toast.LENGTH_LONG).show();
+                            //Toast.makeText(context, "Laczenie", Toast.LENGTH_LONG).show();
                             break;
                         case BluetoothPadService.STATE_LISTEN:
                         case BluetoothPadService.STATE_NONE:
-                            Toast.makeText(context, "Utracono połączenie", Toast.LENGTH_LONG).show();
+                            //Toast.makeText(context, "Utracono połączenie", Toast.LENGTH_LONG).show();
                             break;
                     }
                     break;
