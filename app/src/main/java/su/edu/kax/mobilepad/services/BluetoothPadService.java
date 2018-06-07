@@ -6,16 +6,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
+
+import io.protocol.DefaultBinarySerializationProtocol;
 import su.edu.kax.mobilepad.Constants;
 import su.edu.kax.mobilepad.fragments.CommandControllFragment;
 import su.edu.kax.mobilepad.fragments.MouseControllFragment;
-import su.edu.kax.mobilepad.io.protocol.DefaultBinarySerializationProtocol;
+
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.util.UUID;
 
 public class BluetoothPadService {
@@ -180,13 +180,13 @@ public class BluetoothPadService {
         @Override
         public void handleMessage(Message msg) {
 
-            su.edu.kax.mobilepad.io.message.Message message=(su.edu.kax.mobilepad.io.message.Message) msg.obj;
-            Log.e(TAG,message.type+"");
+            Object message= msg.obj;
             try {
                 serializationProtocol.encode(message,mConnectedThread.getMmOutStream());
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            Log.i(TAG,"Pomyslnie wpisano");
 
 //            switch (msg.what) {
 //                case Constants.COMMAND_COMMAND:

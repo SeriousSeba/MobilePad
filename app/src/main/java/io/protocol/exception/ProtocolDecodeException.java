@@ -1,4 +1,4 @@
-package su.edu.kax.mobilepad.io.protocol.exception;
+package io.protocol.exception;
 
 import java.io.IOException;
 

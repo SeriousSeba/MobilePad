@@ -1,4 +1,4 @@
-package su.edu.kax.mobilepad.io.protocol;
+package io.protocol;
 
 import java.io.IOException;
 import java.io.InputStream;

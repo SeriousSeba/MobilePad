@@ -107,17 +107,17 @@ public class ControllActivity extends Activity /**/ {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controll);
-        button=(Button) findViewById(R.id.button);
-        button.setOnTouchListener(new OnSwipeTouchListener(this){
-            public void onSwipeRight() {
-                handleSwipe(false);
-            }
-            public void onSwipeLeft() {
-                handleSwipe(true);
-            }
-            public void onSwipeBottom() {}
-            public void onSwipeTop() {}
-        });
+//        button=(Button) findViewById(R.id.button);
+//        button.setOnTouchListener(new OnSwipeTouchListener(this){
+//            public void onSwipeRight() {
+//                handleSwipe(false);
+//            }
+//            public void onSwipeLeft() {
+//                handleSwipe(true);
+//            }
+//            public void onSwipeBottom() {}
+//            public void onSwipeTop() {}
+//        });
 
 
         Intent intent = getIntent();
@@ -319,34 +319,32 @@ public class ControllActivity extends Activity /**/ {
 //    }
 
 
-    private void handleSwipe(boolean direction){
-        if(direction){
-            if(position==0)
-                return;
-            position--;
-
-        }
-        else {
-            if(position==2)
-                return;
-            position++;
-        }
-        updateFragment();
-    }
+//    private void handleSwipe(boolean direction){
+//        if(direction){
+//            if(position==0)
+//                return;
+//            position--;
+//
+//        }
+//        else {
+//            if(position==2)
+//                return;
+//            position++;
+//        }
+//        updateFragment();
+//    }
 
     private void updateFragment(){
         fragmentTransaction=fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragmentLayout,fragmentMap.get(position));
+        fragmentTransaction.replace(R.id.commandLayout,fragmentMap.get(1));
+        fragmentTransaction.commit();
+        fragmentTransaction=fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.mouseLayout,fragmentMap.get(0));
         fragmentTransaction.commit();
     }
 
 
     private void initializeFragments(){
-        MouseControllFragment mouseControllFragment=new MouseControllFragment();
-        CommandControllFragment commandControllFragment=new CommandControllFragment();
-        Handler handler=padService.getCommandHandler();
-//        mouseControllFragment.setHandler(handler);
-//        commandControllFragment.setHandler(handler);
         fragmentMap.put(0,new MouseControllFragment());
         fragmentMap.put(1,new CommandControllFragment());
     }

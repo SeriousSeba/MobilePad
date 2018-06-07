@@ -3,11 +3,14 @@ package su.edu.kax.mobilepad.fragments;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.*;
-import in.championswimmer.sfg.lib.SimpleFingerGestures;
+import io.message.control.ControlEvent;
+import io.message.control.MouseButtonEvent;
+import io.message.control.MouseMoveEvent;
 import su.edu.kax.mobilepad.R;
-import su.edu.kax.mobilepad.io.message.Message;
+
 
 public class MouseControllFragment extends Fragment {
 
@@ -47,12 +50,6 @@ public class MouseControllFragment extends Fragment {
 
 
 
-//    public boolean onTouchEvent(MotionEvent event) {
-//        if (this.mDetector.onTouchEvent(event)) {
-//            return true;
-//        }
-//        return getActivity().onTouchEvent(event);
-//    }
 
 
     class MyGestureListener implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener{
@@ -67,16 +64,16 @@ public class MouseControllFragment extends Fragment {
         @Override
         public boolean onFling(MotionEvent event1, MotionEvent event2,
                                float velocityX, float velocityY) {
-            //Log.d(DEBUG_TAG, "onFling: " + event1.toString() + event2.toString());
-
-            if (velocityX > 30 || velocityY > 30) {
-                String elo = "nie wiadomo gdzie";
-                if (Math.abs(velocityX) > Math.abs(velocityY))
-                    elo = "w poziomie";
-                else
-                    elo = "w pionie";
-                return false;
-            }
+//            //Log.d(DEBUG_TAG, "onFling: " + event1.toString() + event2.toString());
+//
+//            if (velocityX > 30 || velocityY > 30) {
+//                String elo = "nie wiadomo gdzie";
+//                if (Math.abs(velocityX) > Math.abs(velocityY))
+//                    elo = "w poziomie";
+//                else
+//                    elo = "w pionie";
+//                return false;
+//            }
             return true;
         }
 
@@ -88,14 +85,11 @@ public class MouseControllFragment extends Fragment {
         @Override
         public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
                                 float distanceY) {
-            //Log.d(DEBUG_TAG, "onScroll: " + event1.toString() + event2.toString());
-//            Log.d(DEBUG_TAG,"Po osi X "+distanceX);
-//            Log.d(DEBUG_TAG,"Po osi Y "+distanceY);
 
-            int[] arguments=new int[]{(int)distanceX,(int)distanceY};
-            int type=Message.Type.MOUSE_MOVE.getValue();
-            Message message=new Message(type,arguments);
-            android.os.Message msg=handler.obtainMessage(type);
+            Log.e(DEBUG_TAG,"Przesuniecie "+distanceX+" "+distanceY);
+
+            MouseMoveEvent message=new MouseMoveEvent((int)distanceX,(int)distanceY);
+            android.os.Message msg=handler.obtainMessage();
             msg.obj=message;
             msg.sendToTarget();
             return true;
@@ -122,22 +116,20 @@ public class MouseControllFragment extends Fragment {
         @Override
         public boolean onDoubleTapEvent(MotionEvent event) {
             //Log.d(DEBUG_TAG,"Podwojne klikniecie");
-            int[] arguments=new int[]{Message.MouseButton.DOUBLE_CLICK.getValue()};
-            int type=Message.Type.MOUSE_BUTTON.getValue();
-            Message message=new Message(type,arguments);
-            android.os.Message msg=handler.obtainMessage(type);
-            msg.obj=message;
-            msg.sendToTarget();
+
+//            MouseButtonEvent message=new MouseButtonEvent(1);
+//            android.os.Message msg=handler.obtainMessage();
+//            msg.obj=message;
+//            msg.sendToTarget();
             return true;
         }
 
         @Override
         public boolean onSingleTapConfirmed(MotionEvent event) {
             //Log.d(DEBUG_TAG,"Pojedyncze klikniecie");
-            int[] arguments=new int[]{Message.MouseButton.SINGLE_CLICK.getValue()};
-            int type=Message.Type.MOUSE_BUTTON.getValue();
-            Message message=new Message(type,arguments);
-            android.os.Message msg=handler.obtainMessage(type);
+
+            MouseButtonEvent message=new MouseButtonEvent(1);
+            android.os.Message msg=handler.obtainMessage();
             msg.obj=message;
             msg.sendToTarget();
             return true;

@@ -16,11 +16,18 @@ public class CommandControllFragment extends Fragment {
     private MessageAdapter messageAdapter;
     public static Handler handler;
 
+    private CheckBox checkBox;
+    private Button button;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view=inflater.inflate(R.layout.command_layout,container,false);
         final GridView gridView=(GridView) view.findViewById(R.id.gridview);
+
+        checkBox=(CheckBox)view.findViewById(R.id.sequenceKeys);
+        button=(Button)view.findViewById(R.id.sendButton);
+
         messageAdapter=new MessageAdapter(getActivity());
         gridView.setAdapter(messageAdapter);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -50,7 +57,7 @@ public class CommandControllFragment extends Fragment {
         }
 
         public Object getItem(int position) {
-            return mThumbIds[position];
+            return position;
         }
 
         public long getItemId(int position) {

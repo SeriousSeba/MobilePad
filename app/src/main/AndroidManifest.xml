@@ -20,7 +20,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".activities.ControllActivity">
+        <activity android:name=".activities.ControllActivity" android:screenOrientation="landscape" android:configChanges="keyboardHidden|orientation">
         </activity>
     </application>
 

@@ -3,11 +3,20 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
-    <TextView
-            android:text="Komendy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:id="@+id/textView2"/>
 
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <Button
+                android:text="Wyślij"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/sendButton" android:layout_weight="1"/>
+        <CheckBox
+                android:text="Sekwencja"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/sequenceKeys" android:layout_weight="1"/>
+    </LinearLayout>
     <GridView
             android:id="@+id/gridview"
             android:layout_width="match_parent"

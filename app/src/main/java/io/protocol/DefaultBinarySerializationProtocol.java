@@ -1,7 +1,8 @@
-package su.edu.kax.mobilepad.io.protocol;
+package io.protocol;
 
-import su.edu.kax.mobilepad.io.protocol.exception.ProtocolDecodeException;
-import java.io.ObjectInputStream;
+
+
+import io.protocol.exception.ProtocolDecodeException;
 
 import java.io.*;
 
