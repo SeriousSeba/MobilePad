@@ -60,6 +60,7 @@ public class CommandControllFragment extends Fragment {
                     Message message = handler.obtainMessage();
                     message.obj = keyCombinationEvent;
                     message.sendToTarget();
+                    checkBox.setChecked(false);
                     messageAdapter.notifyDataSetInvalidated();
                 }
             }
