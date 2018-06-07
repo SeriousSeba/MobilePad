@@ -7,25 +7,33 @@ import android.util.Log;
 import android.view.*;
 import in.championswimmer.sfg.lib.SimpleFingerGestures;
 import su.edu.kax.mobilepad.R;
+import su.edu.kax.mobilepad.io.message.Message;
 
-public class MouseControllFragment extends Fragment{
+public class MouseControllFragment extends Fragment {
 
     private final String DEBUG_TAG="MOUSE_DEBUG";
+    private GestureDetector gestureDetector;
     public static Handler handler;
+
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view =inflater.inflate(R.layout.mouse_layout, container, false);
-        SimpleFingerGestures simpleFingerGestures=new SimpleFingerGestures();
-        simpleFingerGestures.setOnFingerGestureListener(new SimpleGestures());
-        view.setOnTouchListener(simpleFingerGestures);
-        view.setOnClickListener(new View.OnClickListener() {
+        MyGestureListener myGestureListener=new MyGestureListener();
+        gestureDetector=new GestureDetector(getActivity(),myGestureListener);
+        gestureDetector.setOnDoubleTapListener(myGestureListener);
+        view.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                Log.d(DEBUG_TAG,"Clicked");
+            public boolean onTouch(View v, MotionEvent event) {
+                if (gestureDetector.onTouchEvent(event)) {
+                return true;
+                }
+            return getActivity().onTouchEvent(event);
             }
         });
+
+
 //        mDetector = new GestureDetector(R.layout.mouse_layout, this);
 //        mDetector.setOnDoubleTapListener(this);
 
@@ -37,52 +45,6 @@ public class MouseControllFragment extends Fragment{
     }
 
 
-    private class SimpleGestures implements SimpleFingerGestures.OnFingerGestureListener {
-        @Override
-        public boolean onSwipeUp(int fingers, long gestureDuration, double gestureDistance) {
-            Log.d(DEBUG_TAG,"swiped " + fingers + " up");
-            return true;
-        }
-
-        @Override
-        public boolean onSwipeDown(int fingers, long gestureDuration, double gestureDistance) {
-            Log.d(DEBUG_TAG,"swiped " + fingers + " down");
-            return true;
-        }
-
-        @Override
-        public boolean onSwipeLeft(int fingers, long gestureDuration, double gestureDistance) {
-            Log.d(DEBUG_TAG,"swiped " + fingers + " left");
-            return true;
-        }
-
-        @Override
-        public boolean onSwipeRight(int fingers, long gestureDuration, double gestureDistance) {
-            Log.d(DEBUG_TAG,"swiped " + fingers + " right");
-            return true;
-        }
-
-        @Override
-        public boolean onPinch(int fingers, long gestureDuration, double gestureDistance) {
-            Log.d(DEBUG_TAG,"pinch");
-            return true;
-        }
-
-        @Override
-        public boolean onUnpinch(int fingers, long gestureDuration, double gestureDistance) {
-            Log.d(DEBUG_TAG,"unpinch");
-            return true;
-        }
-
-
-        @Override
-        public boolean onDoubleTap(int fingers) {
-            return true;
-        }
-    }
-
-
-
 
 
 //    public boolean onTouchEvent(MotionEvent event) {
@@ -91,106 +53,96 @@ public class MouseControllFragment extends Fragment{
 //        }
 //        return getActivity().onTouchEvent(event);
 //    }
-//
-//
-//
-//    class MouseTouchListener implements View.OnTouchListener{
-//
-//        @Override
-//        public boolean onTouch(View v, MotionEvent event) {
-//
-//            MotionEvent.ActionMo
-//            return false;
-//        }
-//    }
-//
-//
-//    @Override
-//    public boolean onDown(MotionEvent event) {
-//        Log.d(DEBUG_TAG, "onDown: " + event.toString());
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onFling(MotionEvent event1, MotionEvent event2,
-//                           float velocityX, float velocityY) {
-//        Log.d(DEBUG_TAG, "onFling: " + event1.toString() + event2.toString());
-//
-//        if (velocityX > 30 || velocityY > 30) {
-//            String elo = "nie wiadomo gdzie";
-//            if (Math.abs(velocityX) > Math.abs(velocityY))
-//                elo = "w poziomie";
-//            else
-//                elo = "w pionie";
-//            toast.cancel();
-//            toast = Toast.makeText(getActivity(), "Machniecie " + elo, Toast.LENGTH_SHORT);
-//            toast.show();
-//            return false;
-//        }
-//        return true;
-//    }
-//
-//    @Override
-//    public void onLongPress(MotionEvent event) {
-//        toast.cancel();
-//        toast = Toast.makeText(getActivity(), "Dlugie przytrzymanie", Toast.LENGTH_SHORT);
-//        toast.show();
-//    }
-//
-//    @Override
-//    public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
-//                            float distanceY) {
-//        Log.d(DEBUG_TAG, "onScroll: " + event1.toString() + event2.toString());
-////        if(distanceX>10 || distanceY>10)
-////        {
-////       String elo="nie wiadomo gdzie";
-////       if(distanceX>distanceY)
-////           elo="w poziomie";
-////       else
-////           elo="w pionie";
-////       toast.cancel();
-////        toast=Toast.makeText(getApplicationContext(),"Scrollowanie "+elo,Toast.LENGTH_SHORT);
-////        toast.show();
-////        return true;}
-//
-//        return true;
-//
-//    }
-//
-//    @Override
-//    public void onShowPress(MotionEvent event) {
-//        Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
-//    }
-//
-//    @Override
-//    public boolean onSingleTapUp(MotionEvent event) {
-//        Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onDoubleTap(MotionEvent event) {
-//        Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
-//        toast.cancel();
-//        toast = Toast.makeText(getActivity(), "Podwojne klikniecie", Toast.LENGTH_SHORT);
-//        toast.show();
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onDoubleTapEvent(MotionEvent event) {
-//        toast.cancel();
-//        toast = Toast.makeText(getActivity(), "Podwojne klikniecie", Toast.LENGTH_SHORT);
-//        toast.show();
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onSingleTapConfirmed(MotionEvent event) {
-//        toast.cancel();
-//        toast = Toast.makeText(getActivity(), "Pojedyncze klikniecie", Toast.LENGTH_SHORT);
-//        toast.show();
-//        return true;
-//    }
+
+
+    class MyGestureListener implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener{
+
+
+        @Override
+        public boolean onDown(MotionEvent event) {
+            Log.d(DEBUG_TAG, "onDown: " + event.toString());
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent event1, MotionEvent event2,
+                               float velocityX, float velocityY) {
+            //Log.d(DEBUG_TAG, "onFling: " + event1.toString() + event2.toString());
+
+            if (velocityX > 30 || velocityY > 30) {
+                String elo = "nie wiadomo gdzie";
+                if (Math.abs(velocityX) > Math.abs(velocityY))
+                    elo = "w poziomie";
+                else
+                    elo = "w pionie";
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent event) {
+
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
+                                float distanceY) {
+            //Log.d(DEBUG_TAG, "onScroll: " + event1.toString() + event2.toString());
+//            Log.d(DEBUG_TAG,"Po osi X "+distanceX);
+//            Log.d(DEBUG_TAG,"Po osi Y "+distanceY);
+
+            int[] arguments=new int[]{(int)distanceX,(int)distanceY};
+            int type=Message.Type.MOUSE_MOVE.getValue();
+            Message message=new Message(type,arguments);
+            android.os.Message msg=handler.obtainMessage(type);
+            msg.obj=message;
+            msg.sendToTarget();
+            return true;
+
+        }
+
+        @Override
+        public void onShowPress(MotionEvent event) {
+            Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent event) {
+            Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
+            return true;
+        }
+
+        @Override
+        public boolean onDoubleTap(MotionEvent event) {
+            Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
+            return true;
+        }
+
+        @Override
+        public boolean onDoubleTapEvent(MotionEvent event) {
+            //Log.d(DEBUG_TAG,"Podwojne klikniecie");
+            int[] arguments=new int[]{Message.MouseButton.DOUBLE_CLICK.getValue()};
+            int type=Message.Type.MOUSE_BUTTON.getValue();
+            Message message=new Message(type,arguments);
+            android.os.Message msg=handler.obtainMessage(type);
+            msg.obj=message;
+            msg.sendToTarget();
+            return true;
+        }
+
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent event) {
+            //Log.d(DEBUG_TAG,"Pojedyncze klikniecie");
+            int[] arguments=new int[]{Message.MouseButton.SINGLE_CLICK.getValue()};
+            int type=Message.Type.MOUSE_BUTTON.getValue();
+            Message message=new Message(type,arguments);
+            android.os.Message msg=handler.obtainMessage(type);
+            msg.obj=message;
+            msg.sendToTarget();
+            return true;
+        }
+
+    }
 
 }

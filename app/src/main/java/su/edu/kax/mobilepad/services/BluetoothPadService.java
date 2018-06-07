@@ -10,9 +10,11 @@ import android.widget.Toast;
 import su.edu.kax.mobilepad.Constants;
 import su.edu.kax.mobilepad.fragments.CommandControllFragment;
 import su.edu.kax.mobilepad.fragments.MouseControllFragment;
+import su.edu.kax.mobilepad.io.protocol.DefaultBinarySerializationProtocol;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
@@ -99,17 +101,17 @@ public class BluetoothPadService {
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
+        private final ObjectOutputStream mmOutStream;
 
         public ConnectedThread(BluetoothSocket socket) {
             Log.d(TAG, "create ConnectedThread: ");
             mmSocket = socket;
             InputStream tmpIn = null;
-            OutputStream tmpOut = null;
+            ObjectOutputStream tmpOut = null;
 
             try {
                 tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
+                tmpOut = new ObjectOutputStream(socket.getOutputStream());
             } catch (IOException e) {
                 Log.e(TAG, "temp sockets not created", e);
             }
@@ -143,6 +145,10 @@ public class BluetoothPadService {
         }
 
 
+        public ObjectOutputStream getMmOutStream() {
+            return mmOutStream;
+        }
+
         public void write(byte[] buffer) {
             try {
                 mmOutStream.write(buffer);
@@ -169,22 +175,33 @@ public class BluetoothPadService {
     }
 
     private Handler commandHandler=new Handler(){
+        private DefaultBinarySerializationProtocol serializationProtocol=new DefaultBinarySerializationProtocol();
+
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case Constants.COMMAND_COMMAND:
-                    Toast.makeText(context,"Komenda",Toast.LENGTH_LONG).show();
-//                    switch (msg.arg1) {
-//
-//                    }
-                    break;
-                case Constants.COMMAND_MOUSE_MOVE:
-                    Toast.makeText(context,"Ruch myszka",Toast.LENGTH_LONG).show();
-//                    switch (msg.arg1) {
-//
-//                    }
-                    break;
+
+            su.edu.kax.mobilepad.io.message.Message message=(su.edu.kax.mobilepad.io.message.Message) msg.obj;
+            Log.e(TAG,message.type+"");
+            try {
+                serializationProtocol.encode(message,mConnectedThread.getMmOutStream());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
+//            switch (msg.what) {
+//                case Constants.COMMAND_COMMAND:
+//                    Toast.makeText(context,"Komenda",Toast.LENGTH_LONG).show();
+////                    switch (msg.arg1) {
+////
+////                    }
+//                    break;
+//                case Constants.COMMAND_MOUSE_MOVE:
+//                    Toast.makeText(context,"Ruch myszka",Toast.LENGTH_LONG).show();
+////                    switch (msg.arg1) {
+////
+////                    }
+//                    break;
+//            }
         }
     };
 
