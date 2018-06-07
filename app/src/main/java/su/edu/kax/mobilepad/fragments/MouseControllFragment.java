@@ -3,12 +3,10 @@ package su.edu.kax.mobilepad.fragments;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.*;
-import io.message.control.ControlEvent;
-import io.message.control.MouseButtonEvent;
-import io.message.control.MouseMoveEvent;
+import mobilepad.io.message.control.MouseButtonEvent;
+import mobilepad.io.message.control.MouseMoveEvent;
 import su.edu.kax.mobilepad.R;
 
 

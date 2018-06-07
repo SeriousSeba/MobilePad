@@ -1,4 +1,4 @@
-package io.message.control;
+package mobilepad.io.message.control;
 
 public class SwipeEvent extends ControlEvent
 {

@@ -1,6 +1,6 @@
-package io.message.control;
+package mobilepad.io.message.control;
 
-import io.message.Message;
+import mobilepad.io.message.Message;
 
 public class CommandEvent extends ControlEvent
 {

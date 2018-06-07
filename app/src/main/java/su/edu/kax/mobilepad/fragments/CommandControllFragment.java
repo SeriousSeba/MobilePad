@@ -4,12 +4,17 @@ import android.app.Fragment;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
-import su.edu.kax.mobilepad.Constants;
+import mobilepad.io.message.control.KeyCombinationEvent;
+import mobilepad.io.message.control.KeyEvent;
 import su.edu.kax.mobilepad.R;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class CommandControllFragment extends Fragment {
 
@@ -18,6 +23,9 @@ public class CommandControllFragment extends Fragment {
 
     private CheckBox checkBox;
     private Button button;
+    private boolean checked=false;
+
+    private List<Integer> sequence=new LinkedList<>();
 
 
     @Override
@@ -26,14 +34,59 @@ public class CommandControllFragment extends Fragment {
         final GridView gridView=(GridView) view.findViewById(R.id.gridview);
 
         checkBox=(CheckBox)view.findViewById(R.id.sequenceKeys);
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(!isChecked){
+                    sequence.clear();
+                    checked=false;
+                }else{
+                    checked=true;
+                }
+            }
+        });
+
         button=(Button)view.findViewById(R.id.sendButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(sequence.size()!=0) {
+                    KeyCombinationEvent keyCombinationEvent = new KeyCombinationEvent();
+                    int[] tab = getInt();
+                    keyCombinationEvent.keys = tab;
+                    Message message = handler.obtainMessage();
+                    message.obj = keyCombinationEvent;
+                    message.sendToTarget();
+                }
+            }
+        });
+
 
         messageAdapter=new MessageAdapter(getActivity());
         gridView.setAdapter(messageAdapter);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                handler.obtainMessage(Constants.COMMAND_COMMAND).sendToTarget();
+                if(checked){
+                    Integer result=new Integer(position);
+                    TextView view1;
+                    if(!sequence.contains(result)) {
+                        sequence.add(result);
+                        view1=(TextView)view;
+                        view1.setTextColor(R.color.colorAccent);
+                        parent.invalidate();
+
+                    }else {
+                        sequence.remove(result);
+                        //textView.setTextColor(2131034112);
+                    }
+                }else {
+                    KeyEvent keyEvent=new KeyEvent(position);
+                    Message message=handler.obtainMessage();
+                    message.obj=keyEvent;
+                    message.sendToTarget();
+                }
+
             }
         });
 
@@ -44,6 +97,14 @@ public class CommandControllFragment extends Fragment {
         this.handler = handler;
     }
 
+    private int[] getInt(){
+        int[] tab=new int[sequence.size()];
+        for(int i=0;i<sequence.size();i++){
+            tab[i]=sequence.get(i).intValue();
+        }
+        sequence.clear();
+        return tab;
+    }
 
     class MessageAdapter extends BaseAdapter {
         private Context mContext;
@@ -57,10 +118,12 @@ public class CommandControllFragment extends Fragment {
         }
 
         public Object getItem(int position) {
+
             return position;
         }
 
         public long getItemId(int position) {
+
             return 0;
         }
 

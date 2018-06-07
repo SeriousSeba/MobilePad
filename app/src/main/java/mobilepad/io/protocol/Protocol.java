@@ -1,4 +1,4 @@
-package io.protocol;
+package mobilepad.io.protocol;
 
 import java.io.IOException;
 import java.io.InputStream;

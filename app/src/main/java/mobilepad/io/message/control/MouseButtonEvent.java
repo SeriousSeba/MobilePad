@@ -1,7 +1,13 @@
-package io.message.control;
+package mobilepad.io.message.control;
 
 public class MouseButtonEvent extends ControlEvent
 {
+	public static class Button{
+		public static final int LEFT = 1024;
+		public static final int MIDDLE = 2048;
+		public static final int RIGHT = 4096;
+	}
+
 	public int button;
 	public boolean press;
 	public boolean release;

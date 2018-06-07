@@ -1,8 +1,8 @@
-package io.protocol;
+package mobilepad.io.protocol;
 
 
 
-import io.protocol.exception.ProtocolDecodeException;
+import mobilepad.io.protocol.exception.ProtocolDecodeException;
 
 import java.io.*;
 

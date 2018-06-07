@@ -1,4 +1,4 @@
-package io.protocol.exception;
+package mobilepad.io.protocol.exception;
 
 import java.io.IOException;
 

@@ -1,13 +1,13 @@
-package io.protocol;
+package mobilepad.io.protocol;
 
 
 
-import io.message.InfoMessage;
-import io.message.Message;
-import io.message.control.CommandEvent;
-import io.message.control.CustomEvent;
-import io.protocol.exception.ProtocolDecodeException;
-import io.protocol.exception.ProtocolEncodeException;
+import mobilepad.io.message.InfoMessage;
+import mobilepad.io.message.Message;
+import mobilepad.io.message.control.CommandEvent;
+import mobilepad.io.message.control.CustomEvent;
+import mobilepad.io.protocol.exception.ProtocolDecodeException;
+import mobilepad.io.protocol.exception.ProtocolEncodeException;
 
 import java.io.IOException;
 import java.io.InputStream;

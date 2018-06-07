@@ -1,21 +1,20 @@
 package su.edu.kax.mobilepad.services;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-
-import io.protocol.DefaultBinarySerializationProtocol;
+import mobilepad.io.protocol.DefaultBinarySerializationProtocol;
 import su.edu.kax.mobilepad.Constants;
 import su.edu.kax.mobilepad.fragments.CommandControllFragment;
 import su.edu.kax.mobilepad.fragments.MouseControllFragment;
 
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.UUID;
 
 public class BluetoothPadService {
@@ -101,17 +100,17 @@ public class BluetoothPadService {
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
-        private final ObjectOutputStream mmOutStream;
+        private final OutputStream mmOutStream;
 
         public ConnectedThread(BluetoothSocket socket) {
             Log.d(TAG, "create ConnectedThread: ");
             mmSocket = socket;
             InputStream tmpIn = null;
-            ObjectOutputStream tmpOut = null;
+            OutputStream tmpOut = null;
 
             try {
                 tmpIn = socket.getInputStream();
-                tmpOut = new ObjectOutputStream(socket.getOutputStream());
+                tmpOut = socket.getOutputStream();
             } catch (IOException e) {
                 Log.e(TAG, "temp sockets not created", e);
             }
@@ -145,7 +144,7 @@ public class BluetoothPadService {
         }
 
 
-        public ObjectOutputStream getMmOutStream() {
+        public OutputStream getMmOutStream() {
             return mmOutStream;
         }
 
@@ -174,6 +173,7 @@ public class BluetoothPadService {
         return commandHandler;
     }
 
+    @SuppressLint("HandlerLeak")
     private Handler commandHandler=new Handler(){
         private DefaultBinarySerializationProtocol serializationProtocol=new DefaultBinarySerializationProtocol();
 
@@ -183,6 +183,7 @@ public class BluetoothPadService {
             Object message= msg.obj;
             try {
                 serializationProtocol.encode(message,mConnectedThread.getMmOutStream());
+                mConnectedThread.getMmOutStream().flush();
             } catch (Exception e) {
                 e.printStackTrace();
             }

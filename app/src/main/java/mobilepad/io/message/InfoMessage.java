@@ -1,4 +1,4 @@
-package io.message;
+package mobilepad.io.message;
 
 public class InfoMessage extends Message
 {
