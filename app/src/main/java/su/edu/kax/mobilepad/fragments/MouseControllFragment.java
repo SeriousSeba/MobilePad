@@ -5,11 +5,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.*;
-import mobilepad.io.message.control.MouseButtonEvent;
+import mobilepad.io.message.control.MouseDoubleClickEvent;
 import mobilepad.io.message.control.MouseMoveEvent;
 import su.edu.kax.mobilepad.R;
 
-
+/**
+ * Fragmend responsible for setting GUI and its Listeners awaiting for user interaction
+ * with touchpad
+ */
 public class MouseControllFragment extends Fragment {
 
     private final String DEBUG_TAG="MOUSE_DEBUG";
@@ -21,12 +24,13 @@ public class MouseControllFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view =inflater.inflate(R.layout.mouse_layout, container, false);
-        MyGestureListener myGestureListener=new MyGestureListener();
+        final MyGestureListener myGestureListener = new MyGestureListener();
         gestureDetector=new GestureDetector(getActivity(),myGestureListener);
         gestureDetector.setOnDoubleTapListener(myGestureListener);
         view.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+
                 if (gestureDetector.onTouchEvent(event)) {
                 return true;
                 }
@@ -34,24 +38,68 @@ public class MouseControllFragment extends Fragment {
             }
         });
 
+//        Button buttonLeft=(Button)view.findViewById(R.id.button_left);
+//        Button buttonMiddle=(ToggleButton)view.findViewById(R.id.button_midddle);
+//        Button buttonRight=(Button)view.findViewById(R.id.button_right);
+//
+//        buttonLeft.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                mobilepad.io.message.control.KeyEvent message=new mobilepad.io.message.control.KeyEvent(401);
+//                android.os.Message msg=handler.obtainMessage();
+//                msg.obj=message;
+//                msg.sendToTarget();
+//            }
+//        });
+//
+//        buttonMiddle.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                MouseButtonEvent message=new MouseButtonEvent(2048,true,false);
+//                android.os.Message msg=handler.obtainMessage();
+//                msg.obj=message;
+//                msg.sendToTarget();
+//            }
+//        });
+//
+//        buttonRight.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                MouseButtonEvent message=new MouseButtonEvent(4096,true,false);
+//                android.os.Message msg=handler.obtainMessage();
+//                msg.obj=message;
+//                msg.sendToTarget();
+//            }
+//        });
 
-//        mDetector = new GestureDetector(R.layout.mouse_layout, this);
-//        mDetector.setOnDoubleTapListener(this);
+
 
         return view;
     }
 
-    public void setHandler(Handler handler) {
-        this.handler = handler;
-    }
 
-
-
-
-
-
+    /**
+     * Class responsible for awaiting for user interactions and calculating them into properly formated data
+     * Uses handler to send data to connection thread
+     */
     class MyGestureListener implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener{
 
+        private long previous = 0;
+        private float x = 0;
+        private float y = 0;
+        private int times = 0;
+
+        /**
+         * Send MouseMoveEven based upon gathered data in previous moves of user
+         */
+        public void sendCoordinates() {
+            MouseMoveEvent message = new MouseMoveEvent(2 * -(int) x, 2 * -(int) y);
+            android.os.Message msg = handler.obtainMessage();
+            msg.obj = message;
+            msg.sendToTarget();
+            x = 0;
+            y = 0;
+        }
 
         @Override
         public boolean onDown(MotionEvent event) {
@@ -59,19 +107,11 @@ public class MouseControllFragment extends Fragment {
             return true;
         }
 
+
         @Override
         public boolean onFling(MotionEvent event1, MotionEvent event2,
                                float velocityX, float velocityY) {
-//            //Log.d(DEBUG_TAG, "onFling: " + event1.toString() + event2.toString());
-//
-//            if (velocityX > 30 || velocityY > 30) {
-//                String elo = "nie wiadomo gdzie";
-//                if (Math.abs(velocityX) > Math.abs(velocityY))
-//                    elo = "w poziomie";
-//                else
-//                    elo = "w pionie";
-//                return false;
-//            }
+
             return true;
         }
 
@@ -84,13 +124,21 @@ public class MouseControllFragment extends Fragment {
         public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
                                 float distanceY) {
 
-            Log.e(DEBUG_TAG,"Przesuniecie "+distanceX+" "+distanceY);
+            x += distanceX;
+            y += distanceY;
 
-            MouseMoveEvent message=new MouseMoveEvent((int)distanceX,(int)distanceY);
-            android.os.Message msg=handler.obtainMessage();
-            msg.obj=message;
-            msg.sendToTarget();
-            return true;
+            long time = previous != 0 ? previous : event1.getEventTime();
+            time = event2.getEventTime() - time;
+            times++;
+
+            if (times < 5 && time < 65) {
+                return true;
+            } else {
+                previous = event2.getEventTime();
+                times = 0;
+                sendCoordinates();
+                return true;
+            }
 
         }
 
@@ -113,23 +161,15 @@ public class MouseControllFragment extends Fragment {
 
         @Override
         public boolean onDoubleTapEvent(MotionEvent event) {
-            //Log.d(DEBUG_TAG,"Podwojne klikniecie");
-
-//            MouseButtonEvent message=new MouseButtonEvent(1);
-//            android.os.Message msg=handler.obtainMessage();
-//            msg.obj=message;
-//            msg.sendToTarget();
+            MouseDoubleClickEvent message = new MouseDoubleClickEvent();
+            android.os.Message msg=handler.obtainMessage();
+            msg.obj=message;
+            msg.sendToTarget();
             return true;
         }
 
         @Override
         public boolean onSingleTapConfirmed(MotionEvent event) {
-            //Log.d(DEBUG_TAG,"Pojedyncze klikniecie");
-
-            MouseButtonEvent message=new MouseButtonEvent(1);
-            android.os.Message msg=handler.obtainMessage();
-            msg.obj=message;
-            msg.sendToTarget();
             return true;
         }
 

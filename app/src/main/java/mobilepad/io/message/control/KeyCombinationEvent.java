@@ -10,7 +10,9 @@ public class KeyCombinationEvent extends ControlEvent
 	public KeyCombinationEvent() {
 		super(Type.KEY_COMBINATION);
 		keys = null;
-	}
+        this.press = true;
+        this.release = true;
+    }
 
 
 	public KeyCombinationEvent(int... keys) {

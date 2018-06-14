@@ -15,8 +15,10 @@ import su.edu.kax.mobilepad.fragments.MouseControllFragment;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.UUID;
 
+/**
+ * Service taking care of managing thread that sends and receives data from bluetooth device
+ */
 public class BluetoothPadService {
 
     public static final int STATE_NONE=0;
@@ -26,9 +28,6 @@ public class BluetoothPadService {
 
 
     private static final String TAG = "BluetoothPadService";
-    private static final UUID MY_UUID_SECURE =
-            UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
-
 
     private Handler mHandler = null;
     private ConnectedThread mConnectedThread;
@@ -44,12 +43,38 @@ public class BluetoothPadService {
         CommandControllFragment.handler=commandHandler;
     }
 
+
     public synchronized int getState() {
         return mState;
     }
 
 
+    /**
+     * Handler responsible for trapnsporting events between user interaction with application GUI
+     * and Connection thread writing serialized data to device
+     */
+    @SuppressLint("HandlerLeak")
+    private Handler commandHandler = new Handler() {
+        private DefaultBinarySerializationProtocol serializationProtocol = new DefaultBinarySerializationProtocol();
 
+        @Override
+        public void handleMessage(Message msg) {
+            Object message = msg.obj;
+            try {
+                serializationProtocol.encode(message, mConnectedThread.getMmOutStream());
+                mConnectedThread.getMmOutStream().flush();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Log.i(TAG, "Pomyslnie wpisano");
+
+        }
+    };
+
+    /**
+     * Starts new connection thread based on given BluetoothSocket
+     * If previous thread is still running function terminates it
+     */
     public synchronized void start() {
         new Thread(new Runnable() {
             @Override
@@ -69,18 +94,31 @@ public class BluetoothPadService {
 
     }
 
+    public void setBluetoothSocket(BluetoothSocket bluetoothSocket) {
+        this.bluetoothSocket = bluetoothSocket;
+    }
+
+    /**
+     * Stops running connection thread and closes socket
+     */
     public synchronized void stop(){
         if(mConnectedThread!=null){
             mConnectedThread.cancel();
             mState=STATE_NONE;
         }
+        try {
+            if (bluetoothSocket != null)
+                bluetoothSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         updateUserInterfaceTitle();
     }
 
-    public void setBluetoothSocket(BluetoothSocket bluetoothSocket) {
-        this.bluetoothSocket = bluetoothSocket;
-    }
-
+    /**
+     * Function called upon losted connection
+     * Sends message to GUI handler and sets connection state
+     */
     private void connectionLost() {
         Message msg = mHandler.obtainMessage(Constants.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
@@ -92,11 +130,17 @@ public class BluetoothPadService {
         updateUserInterfaceTitle();
     }
 
+    /**
+     * Sends request to GUI for interface update
+     */
     private void updateUserInterfaceTitle() {
         mHandler.obtainMessage(Constants.MESSAGE_STATE_CHANGE,mState).sendToTarget();
     }
 
-
+    /**
+     * Thread responsible for communicating with paired bluetooth device
+     * Sends serialized objects thorough socket to device RX server
+     */
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
@@ -125,7 +169,6 @@ public class BluetoothPadService {
             byte[] buffer = new byte[1024];
             int bytes;
 
-
             while (mState == STATE_CONNECTED) {
                 try {
                     bytes = mmInStream.read(buffer);
@@ -148,6 +191,11 @@ public class BluetoothPadService {
             return mmOutStream;
         }
 
+        /**
+         * Writes givenn buffer to input stream of bluetooth socket
+         *
+         * @param buffer Byte buffer to be written
+         */
         public void write(byte[] buffer) {
             try {
                 mmOutStream.write(buffer);
@@ -159,6 +207,9 @@ public class BluetoothPadService {
         }
 
 
+        /**
+         * Cancels connection between application and device server
+         */
         public void cancel() {
             try {
                 mmSocket.close();
@@ -167,44 +218,6 @@ public class BluetoothPadService {
             }
         }
     }
-
-
-    public Handler getCommandHandler() {
-        return commandHandler;
-    }
-
-    @SuppressLint("HandlerLeak")
-    private Handler commandHandler=new Handler(){
-        private DefaultBinarySerializationProtocol serializationProtocol=new DefaultBinarySerializationProtocol();
-
-        @Override
-        public void handleMessage(Message msg) {
-
-            Object message= msg.obj;
-            try {
-                serializationProtocol.encode(message,mConnectedThread.getMmOutStream());
-                mConnectedThread.getMmOutStream().flush();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Log.i(TAG,"Pomyslnie wpisano");
-
-//            switch (msg.what) {
-//                case Constants.COMMAND_COMMAND:
-//                    Toast.makeText(context,"Komenda",Toast.LENGTH_LONG).show();
-////                    switch (msg.arg1) {
-////
-////                    }
-//                    break;
-//                case Constants.COMMAND_MOUSE_MOVE:
-//                    Toast.makeText(context,"Ruch myszka",Toast.LENGTH_LONG).show();
-////                    switch (msg.arg1) {
-////
-////                    }
-//                    break;
-//            }
-        }
-    };
 
 
 }

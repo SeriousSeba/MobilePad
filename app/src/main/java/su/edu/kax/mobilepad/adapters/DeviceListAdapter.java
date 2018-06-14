@@ -11,6 +11,10 @@ import su.edu.kax.mobilepad.R;
 
 import java.util.ArrayList;
 
+/**
+ * Adapter with Bluetooth devices used for listing found devices in ConnectionActivity
+ * Contains devices infromations stored in BluetoothDevice class
+ */
 public class DeviceListAdapter extends BaseAdapter {
     private ArrayList<BluetoothDevice> mLeDevices;
     private LayoutInflater mInflator;
@@ -21,6 +25,7 @@ public class DeviceListAdapter extends BaseAdapter {
         mLeDevices = new ArrayList<>();
         mInflator = parentActivity.getLayoutInflater();
     }
+
 
     public void addDevice(BluetoothDevice device) {
         if(!mLeDevices.contains(device)) {

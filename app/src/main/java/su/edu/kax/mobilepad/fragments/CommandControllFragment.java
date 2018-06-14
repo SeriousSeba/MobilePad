@@ -5,18 +5,22 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 import mobilepad.io.message.control.KeyCombinationEvent;
 import mobilepad.io.message.control.KeyEvent;
+import su.edu.kax.mobilepad.Constants;
 import su.edu.kax.mobilepad.R;
 
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Fragmend responsible for managing avaiable commands to be properly placed
+ * showed and handled upon user interaction with GUI
+ */
 public class CommandControllFragment extends Fragment {
 
     private MessageAdapter messageAdapter;
@@ -73,8 +77,8 @@ public class CommandControllFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(checked){
-                    Integer result=new Integer(position);
-                    TextView view1=(TextView)view;;
+                    Integer result = new Integer(Constants.keysValues[position]);
+                    TextView view1 = (TextView) view;
                     if(!sequence.contains(result)) {
                         sequence.add(result);
                         view1.setBackgroundColor(R.color.colorWhite);
@@ -86,7 +90,7 @@ public class CommandControllFragment extends Fragment {
                         parent.invalidate();
                     }
                 }else {
-                    KeyEvent keyEvent=new KeyEvent(position);
+                    KeyEvent keyEvent = new KeyEvent(Constants.keysValues[position]);
                     Message message=handler.obtainMessage();
                     message.obj=keyEvent;
                     message.sendToTarget();
@@ -98,19 +102,23 @@ public class CommandControllFragment extends Fragment {
         return view;
     }
 
-    public void setHandler(Handler handler) {
-        this.handler = handler;
-    }
 
+    /**
+     * @return Returns gathered sequence keys picked by user
+     */
     private int[] getInt(){
         int[] tab=new int[sequence.size()];
-        for(int i=0;i<sequence.size();i++){
+        for(int i = 0; i<sequence.size(); i++){
             tab[i]=sequence.get(i).intValue();
         }
         sequence.clear();
         return tab;
     }
 
+    /**
+     * Adapter taking care of GridView
+     * Coresponds with Constand table for proper command typing
+     */
     class MessageAdapter extends BaseAdapter {
         private Context mContext;
 
@@ -133,11 +141,18 @@ public class CommandControllFragment extends Fragment {
         }
 
 
+        private String[] mThumbIds = {
+                "ESC", "CTRL", "BACK",
+                "TAB", "SHIFT", "ENTER",
+                "CAPS", "ALT", "SPACE",
+                "END", "DEL", "INSERT"
+        };
+
         public View getView(int position, View convertView, ViewGroup parent) {
             TextView textView;
             if (convertView == null) {
                 textView = new TextView(mContext);
-                textView.setLayoutParams(new ViewGroup.LayoutParams(85, 85));
+                textView.setLayoutParams(new ViewGroup.LayoutParams(120, 120));
                 textView.setPadding(8, 8, 8, 8);
             } else {
                 textView = (TextView) convertView;
@@ -148,14 +163,7 @@ public class CommandControllFragment extends Fragment {
             textView.setText(mThumbIds[position]);
             return textView;
         }
-
-
-        private String[] mThumbIds = {
-                "Cancel","Clear","Shift","Ctrl","Alt","Pause","Caps","Esc","Space",
-                "PG_U","PG_D","End","Home","Left","Up","Right","Down"
-        };
     }
-
 
 
 }

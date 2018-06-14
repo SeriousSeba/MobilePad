@@ -19,12 +19,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
-import su.edu.kax.mobilepad.adapters.DeviceListAdapter;
 import su.edu.kax.mobilepad.R;
+import su.edu.kax.mobilepad.adapters.DeviceListAdapter;
 
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Activity responsible for listing bluetooth devices and getting thier
+ * hardware bluetooth infromations
+ */
 public class ConnectionActivity extends ListActivity {
 
     private final int PERMISSION_REQUEST_CODE=966;
@@ -38,10 +42,7 @@ public class ConnectionActivity extends ListActivity {
 
     private boolean mScanning=false;
 
-    /**
-     * Funkcja wywolywana przy powstawaniu aktywnosci
-     * @param savedInstanceState
-     */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,94 +51,67 @@ public class ConnectionActivity extends ListActivity {
         mHandler=new Handler(); //Nowy Handler Taskow
     }
 
+
     /**
-     * Funkcja wywolywana przy kontynuwoaniu aktywnosci
+     * Broadcast receiver for checking found bluetooth devices and responding properly to theird
+     * state change
      */
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();//Jesli znaleziono nowe urzadzenie
+            Log.e("Scan", action);
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                mDeviceListAdapter.addDevice(device);  //Dodaj do adaptera nowe urzadzenie i jego mac
+                mDeviceListAdapter.notifyDataSetChanged();
+            }
+        }
+    };
+
     @Override
     protected void onResume() {
         super.onResume();
 
-        mDeviceListAdapter = new DeviceListAdapter(this); //Nowy adapter
-        setListAdapter(mDeviceListAdapter);  //Uaktualnienie adapter
-//        scanDevice(true);  //Zacznij skanowac
+        mDeviceListAdapter = new DeviceListAdapter(this);
+        setListAdapter(mDeviceListAdapter);
     }
 
-    /**
-     * Funkcja wyowlywana przy spauzowaniu aktynowsci
-     */
     @Override
     protected void onPause() {
         super.onPause();
-        scanDevice(false); //Przestan skanowac
-        mDeviceListAdapter.clear(); //Wyczysc adapter
+        scanDevice(false);
+        mDeviceListAdapter.clear();
     }
 
-    /**
-     * Funkcja wywolywana podczas niszczenia aktywnosci
-     */
     @Override
     protected void onDestroy(){
         super.onDestroy();
-        unregisterReceiver(mReceiver); //Wyrejestruj receiver
+        unregisterReceiver(mReceiver);
     }
 
     /**
-     * Funkcja do ustalenia zezwolen
+     * Sets up permisssions demanded for proper use of application
      */
     private void setUpPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { //Czy powyzej wersji 6.0 (Od tej sa run-time permssions)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             List<String> permissionsList=new LinkedList<>();
             if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
-                permissionsList.add(Manifest.permission.ACCESS_COARSE_LOCATION);  //Po koleji sprawdza i dodaje umozliwienia
+                permissionsList.add(Manifest.permission.ACCESS_COARSE_LOCATION);  //
             }
-
-//            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-//                    != PackageManager.PERMISSION_GRANTED) {
-//                permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);
-//            }
-//
-//            if (checkSelfPermission(Manifest.permission.BLUETOOTH)
-//                    != PackageManager.PERMISSION_GRANTED) {
-//                permissionsList.add(Manifest.permission.BLUETOOTH);
-//            }
-
             if(permissionsList.size()!=0)
-                requestPermissions(permissionsList.toArray(new String[permissionsList.size()]),PERMISSION_REQUEST_CODE); //Prosi o pozwolenie
-
+                requestPermissions(permissionsList.toArray(new String[permissionsList.size()]), PERMISSION_REQUEST_CODE);
         }
 
     }
 
-    /**
-     * Funkcja ustawia bluetooth
-     */
-    private void setUpBluetooth() {
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //Ustawia adapter
-        if (mBluetoothAdapter == null) { // Sprawdza czy istnieje jesli nie to nie obsluguje wiec wychodzi
-            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        else{//Rejestruje nowy receiver nastawiony na przechwytywanie urzadzen
-            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-            registerReceiver(mReceiver, filter);
-        }
-    }
 
-
-    /**
-     * Funkcja do tworzenia menu
-     * @param menu
-     * @return
-     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_connections, menu);
         if (!mScanning) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
-//            menu.findItem(R.id.menu_refresh).setActionView(null);
         } else {
             menu.findItem(R.id.menu_stop).setVisible(true);
             menu.findItem(R.id.menu_scan).setVisible(false);
@@ -148,18 +122,28 @@ public class ConnectionActivity extends ListActivity {
     }
 
     /**
-     * Funkcja wywolywana podczas wyboru z menu
-     * @param item
-     * @return
+     * Sets up bluetooth adapters and configurations properies
      */
+    private void setUpBluetooth() {
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        } else {
+            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+            registerReceiver(mReceiver, filter);
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.menu_scan: //Skan, resetuj adapter i skanuj
+            case R.id.menu_scan:
                 mDeviceListAdapter.clear();
                 scanDevice(true);
                 break;
-            case R.id.menu_stop: //Zatrzymaj skanowanie
+            case R.id.menu_stop:
                 scanDevice(false);
                 break;
         }
@@ -167,37 +151,6 @@ public class ConnectionActivity extends ListActivity {
     }
 
 
-    /**
-     * Callback przy pytaniu o pozwolenia
-     * @param requestCode
-     * @param resultCode
-     * @param data
-     */
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED) {
-            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_LONG).show();
-            finish(); //Jesli nie wlaczono bluetooth to wyjdz
-            return;
-        }
-
-        if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode != Activity.RESULT_CANCELED) {
-            scanDevice(true); //Jesli wlaczono bluetooth
-            return;
-        } else if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED) {
-            Toast.makeText(this, R.string.error_bluetooth_not_enabled, Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
-    }
-
-    /**
-     * Callback przy pytaniu o pozwolenia
-     * @param requestCode
-     * @param permissions
-     * @param grantResults
-     */
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -216,6 +169,7 @@ public class ConnectionActivity extends ListActivity {
         }
     }
 
+
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         if (mDeviceListAdapter != null) {
@@ -228,14 +182,32 @@ public class ConnectionActivity extends ListActivity {
 
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode != Activity.RESULT_CANCELED) {
+            scanDevice(true);
+            return;
+        } else if (requestCode == BLUETOOTH_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(this, R.string.error_bluetooth_not_enabled, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+    }
 
     /**
-     * Funkcja do skanowania urzadzen
-     * @param enable
+     * Function for setting adapter ability for scanning and finding devices
+     * @param enable Scanning disabled/enabled
      */
     private void scanDevice(final boolean enable) {
 
-        if (enable) {// Jesli skanuj to sprawdz czy bluetooth wlaczono i ewentualnie wlacz
+        if (enable) {
             if (!mBluetoothAdapter.isEnabled()) {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
@@ -252,32 +224,14 @@ public class ConnectionActivity extends ListActivity {
                 }
             }, SCAN_PERIOD);
 
-            mScanning = true; //Skanuj
+            mScanning = true;
             mBluetoothAdapter.startDiscovery();
-        } else {//Jesli wylacz to anuluj skanowanie
+        } else {
             mScanning = false;
             mBluetoothAdapter.cancelDiscovery();
         }
-        invalidateOptionsMenu(); //Uaktualni menu
+        invalidateOptionsMenu();
     }
-
-
-    /**
-     * Klasa receivera urzadzen
-     */
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();//Jesli znaleziono nowe urzadzenie
-            Log.e("Scan",action);
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                mDeviceListAdapter.addDevice(device);  //Dodaj do adaptera nowe urzadzenie i jego mac
-                mDeviceListAdapter.notifyDataSetChanged();
-            }
-
-        }
-    };
-
 
 
 }
