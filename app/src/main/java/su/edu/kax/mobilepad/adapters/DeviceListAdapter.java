@@ -1,4 +1,4 @@
-package su.edu.kax.mobilepad;
+package su.edu.kax.mobilepad.adapters;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
@@ -7,10 +7,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+import su.edu.kax.mobilepad.R;
 
 import java.util.ArrayList;
 
-class DeviceListAdapter extends BaseAdapter {
+/**
+ * Adapter with Bluetooth devices used for listing found devices in ConnectionActivity
+ * Contains devices infromations stored in BluetoothDevice class
+ */
+public class DeviceListAdapter extends BaseAdapter {
     private ArrayList<BluetoothDevice> mLeDevices;
     private LayoutInflater mInflator;
 
@@ -20,6 +25,7 @@ class DeviceListAdapter extends BaseAdapter {
         mLeDevices = new ArrayList<>();
         mInflator = parentActivity.getLayoutInflater();
     }
+
 
     public void addDevice(BluetoothDevice device) {
         if(!mLeDevices.contains(device)) {
